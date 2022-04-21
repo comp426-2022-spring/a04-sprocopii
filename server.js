@@ -46,7 +46,7 @@ const server = app.listen(port, () => {
     console.log(`App is running on port ${port}`)
 })
 
-app.use(morgan('tiny'))
+//app.use(morgan('combined'))
 
 app.get('/app/flip', (req, res) => {
     var flip = coinFlip()
@@ -79,61 +79,56 @@ app.get('/app', (req, res, next) => {
   res.status(200);
 })
 
-// Define other CRUD API endpoints using express.js and better-sqlite3
-// CREATE a new user (HTTP method POST) at endpoint /app/new/
-app.post("/app/new/user", (req, res, next) => {
-  let data = {
-      user: req.body.username,
-      pass: req.body.password
-  }
-  const stmt = db.prepare('INSERT INTO userinfo (username, password) VALUES (?, ?)')
-  const info = stmt.run(data.user, data.pass)
-  res.status(200).json(info)
-})
-
-// READ a list of users (HTTP method GET) at endpoint /app/users/
-app.get("/app/users", (req, res) => {	
-  try {
-      const stmt = db.prepare('SELECT * FROM userinfo').all()
-      res.status(200).json(stmt)
-  } catch {
-      console.error(e)
-  }
-})
-
-// READ a single user (HTTP method GET) at endpoint /app/user/:id
-app.get("/app/user/:id", (req, res) => {
-  try {
-      const stmt = db.prepare('SELECT * FROM userinfo WHERE id = ?').get(req.params.id);
-      res.status(200).json(stmt)
-  } catch (e) {
-      console.error(e)
+//Middleware function that inserts new record in database containing all variables 
+app.use( (req, res, next) => {
+  let logdata = {
+    remoteaddr: req.ip,
+    remoteuser: req.user,
+    time: Date.now(),
+    method: req.method,
+    url: req.url,
+    protocol: req.protocol,
+    httpversion: req.httpVersion,
+    status: res.statusCode,
+    referer: req.headers['referer'],
+    useragent: req.headers['user-agent']
   }
 
+  const stmt = db.prepare('INSERT INTO accesslog (remoteaddr, remoteuser, time, method, url, protocol, httpversion, status, referer, useragent) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
+  const info = stmt.run(logdata.remoteaddr, logdata.remoteuser, logdata.time, logdata.method, logdata.url, logdata.protocol, logdata.httpversion, logdata.status, logdata.referer, logdata.useragent)
+
+  next()
 })
 
-// UPDATE a single user (HTTP method PATCH) at endpoint /app/update/user/:id
-app.patch("/app/update/user/:id", (req, res) => {
-  let data = {
-      user: req.body.username,
-      pass: req.body.password
-  }
-  const stmt = db.prepare('UPDATE userinfo SET username = COALESCE(?,username), password = COALESCE(?,password) WHERE id = ?')
-  const info = stmt.run(data.user, data.pass, req.params.id)
-  res.status(200).json(info)
-})
+//If debug is true, the endpoints should be available when server.js is run
+if (args.debug  == true) {
+  //Returns all records in accesslog table in database
+  app.get("/app/log/access", (req, res) => {	
+    try {
+        const stmt = db.prepare('SELECT * FROM accesslog').all()
+        res.status(200).json(stmt)
+    } catch {
+        console.error(e)
+    }
+  })
+  //Returns error in the response
+  app.get('/app/error', (req, res) => {
+    throw new Error("Error test successful")
+  })
+}
 
-// DELETE a single user (HTTP method DELETE) at endpoint /app/delete/user/:id
-app.delete("/app/delete/user/:id", (req, res) => {
-  const stmt = db.prepare('DELETE FROM userinfo WHERE id = ?')
-  const info = stmt.run(req.params.id)
-  res.status(200).json(info)
-})
+if (args.log != false) {
+  // Use morgan for logging to files
+  // Create a write stream to append (flags: 'a') to a file
+  const write_stream = fs.createWriteStream('./access.log', { flags: 'a' })
+  // Set up the access logging middleware
+  app.use(morgan('combined', { stream: write_stream }))
+}
 
 //Default response for any other request (default endpoint)
 app.use(function(req, res){
 	res.json({"message":"Endpoint not found. (404)"});
-    res.status(404);
+  res.status(404);
 })
 
 process.on('SIGTERM', () => {
