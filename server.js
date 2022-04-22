@@ -131,11 +131,11 @@ app.use(function(req, res){
   res.status(404);
 })
 
-process.on('SIGTERM', () => {
-  server.close(() => {
-      console.log('Server stopped')
-  })
-})
+//process.on('SIGTERM', () => {
+  //server.close(() => {
+      //console.log('Server stopped')
+  //})
+//})
 
 //Functions used for flipping the coin
 function coinFlip() {
