@@ -46,6 +46,12 @@ const server = app.listen(port, () => {
     console.log(`App is running on port ${port}`)
 })
 
+//Check endpoint
+app.get('/app', (req, res, next) => {
+  res.json({"message":"Your API works! (200)"});
+  res.status(200);
+})
+
 //Middleware function that inserts new record in database containing all variables 
 app.use( (req, res, next) => {
   let logdata = {
@@ -91,12 +97,6 @@ if (args.log != 'false') {
   // Set up the access logging middleware
   app.use(morgan('combined', { stream: write_stream }))
 }
-
-//Check endpoint
-app.get('/app', (req, res, next) => {
-  res.json({"message":"Your API works! (200)"});
-  res.status(200);
-})
 
 app.get('/app/flip', (req, res) => {
   var flip = coinFlip()
