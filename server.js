@@ -74,7 +74,7 @@ app.use( (req, res, next) => {
 })
 
 //If debug is true, the endpoints should be available when server.js is run
-if (args.debug  == 'true') {
+if (args.debug  == true) {
   //Returns all records in accesslog table in database
   app.get("/app/log/access", (req, res) => {	
     try {
