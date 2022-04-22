@@ -46,39 +46,6 @@ const server = app.listen(port, () => {
     console.log(`App is running on port ${port}`)
 })
 
-//app.use(morgan('combined'))
-
-app.get('/app/flip', (req, res) => {
-    var flip = coinFlip()
-    res.type('text/plain')
-    res.status(200).json({ 'flip' : flip })
-})
-
-app.get('/app/flip/call/heads', (req, res) => {
-    var heads = flipACoin('heads')
-    res.type('text/plain')
-    res.status(200).json({ 'call' : heads.call, 'flip' : heads.flip, 'result' : heads.result })
-})
-
-app.get('/app/flip/call/tails', (req, res) => {
-    var tails = flipACoin('tails')
-    res.type('text/plain')
-    res.status(200).json({ 'call' : tails.call, 'flip' : tails.flip, 'result' : tails.result })
-})
-
-app.get('/app/flips/:number', (req, res) => {
-    var coinFlipsResult = coinFlips(req.params.number)
-    var countFlipsResult = countFlips(coinFlips)
-    res.type('text/plain')
-    res.status(200).json({ 'raw' : coinFlipsResult, 'summary' : countFlipsResult })
-})
-
-//Check endpoint
-app.get('/app', (req, res, next) => {
-  res.json({"message":"Your API works! (200)"});
-  res.status(200);
-})
-
 //Middleware function that inserts new record in database containing all variables 
 app.use( (req, res, next) => {
   let logdata = {
@@ -101,7 +68,7 @@ app.use( (req, res, next) => {
 })
 
 //If debug is true, the endpoints should be available when server.js is run
-if (args.debug  == true) {
+if (args.debug  == 'true') {
   //Returns all records in accesslog table in database
   app.get("/app/log/access", (req, res) => {	
     try {
@@ -117,13 +84,44 @@ if (args.debug  == true) {
   })
 }
 
-if (args.log != false) {
+if (args.log != 'false') {
   // Use morgan for logging to files
   // Create a write stream to append (flags: 'a') to a file
   const write_stream = fs.createWriteStream('access.log', { flags: 'a' })
   // Set up the access logging middleware
   app.use(morgan('combined', { stream: write_stream }))
 }
+
+//Check endpoint
+app.get('/app', (req, res, next) => {
+  res.json({"message":"Your API works! (200)"});
+  res.status(200);
+})
+
+app.get('/app/flip', (req, res) => {
+  var flip = coinFlip()
+  res.type('text/plain')
+  res.status(200).json({ 'flip' : flip })
+})
+
+app.get('/app/flip/call/heads', (req, res) => {
+  var heads = flipACoin('heads')
+  res.type('text/plain')
+  res.status(200).json({ 'call' : heads.call, 'flip' : heads.flip, 'result' : heads.result })
+})
+
+app.get('/app/flip/call/tails', (req, res) => {
+  var tails = flipACoin('tails')
+  res.type('text/plain')
+  res.status(200).json({ 'call' : tails.call, 'flip' : tails.flip, 'result' : tails.result })
+})
+
+app.get('/app/flips/:number', (req, res) => {
+  var coinFlipsResult = coinFlips(req.params.number)
+  var countFlipsResult = countFlips(coinFlips)
+  res.type('text/plain')
+  res.status(200).json({ 'raw' : coinFlipsResult, 'summary' : countFlipsResult })
+})
 
 //Default response for any other request (default endpoint)
 app.use(function(req, res){
